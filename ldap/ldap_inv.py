@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ## ansible ldap inventory script Copyright (c) 2013 by Vincent Van der
 ## Kussen
 ##
@@ -35,8 +35,8 @@ try:
     l.set_option(ldap.OPT_PROTOCOL_VERSION,ldap.VERSION3)
     l.bind_s(username, password, ldap.AUTH_SIMPLE)
 
-except ldap.LDAPError, e:
-    print e
+except ldap.LDAPError as e:
+    print(e)
 
 # LDAP variables
 baseDN = os.getenv("LDAPBASEDN", 'ou=ansible, dc=ansible, dc=local')
@@ -58,7 +58,9 @@ groupsearchFilter = '(&(objectClass=groupOfNames)(cn=*))'
 #    return var
 
 def generatekv(ansibleAttribute):
-    attr = re.match(r'(.*)=(.*)', ansibleAttribute)
+    #import pdb; pdb.set_trace()
+
+    attr = re.match(r'(.*)=(.*)', ansibleAttribute.decode("utf-8"))
     key = attr.group(1)
     value = attr.group(2)
     bla = (key,value)
@@ -90,16 +92,17 @@ def getlist():
         groups = detect_group()
         for item in result:
             res = item[1]
-            group = res['cn'][0]
+            group = res['cn'][0].decode("utf-8")
             hostgroup = [ ]
             varlist = [ ]
             children = [ ]
             res = dict(item[1])
             #print res
-            for key, value in res.iteritems():
+            for key, value in res.items():
                 if key == "member":
                     for item in value:
-                        host = re.match(r'cn=([^,]*)', item)
+                        host_byte_string=item.decode("utf-8") 
+                        host = re.match('cn=([^,]*)', host_byte_string)
                         host = host.group(1)
                         if host in groups:
                             children.append(host)
@@ -112,10 +115,10 @@ def getlist():
             inv[group] = {"hosts": hostgroup}
             inv[group]['vars'] = dict(varlist)
             inv[group]["children"]= children
-        print json.dumps(inv, sort_keys=True, indent=2)
+        print(json.dumps(inv, sort_keys=True, indent=2))
 
-    except ldap.LDAPError, e:
-        print e
+    except ldap.LDAPError as e:
+        print(e)
 
     l.unbind_s()
 
@@ -146,7 +149,7 @@ def getdetails(host):
                             varlist.append((k, valuelist))
         details = dict(varlist)
 
-    print json.dumps(details, sort_keys=True, indent=2)
+    print(json.dumps(details, sort_keys=True, indent=2))
     l.unbind_s()
 
 # ----------------------------------------------------------------------
@@ -160,5 +163,5 @@ elif len(sys.argv) == 3 and (sys.argv[1] == '--host'):
     getdetails(host)
 
 else:
-    print "usage --list or --host <hostname>"
+    print("usage --list or --host <hostname>")
     sys.exit(1)
