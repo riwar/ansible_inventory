@@ -57,10 +57,13 @@ groupsearchFilter = '(&(objectClass=groupOfNames)(cn=*))'
 #    var[key] = value
 #    return var
 
+def decode_to_utf8(bytestring):
+    return bytestring.decode("utf-8")
+
 def generatekv(ansibleAttribute):
     #import pdb; pdb.set_trace()
-
-    attr = re.match(r'(.*)=(.*)', ansibleAttribute.decode("utf-8"))
+    ansibleAttribute = decode_to_utf8(ansibleAttribute)
+    attr = re.match(r'(.*)=(.*)', ansibleAttribute)
     key = attr.group(1)
     value = attr.group(2)
     bla = (key,value)
@@ -92,7 +95,8 @@ def getlist():
         groups = detect_group()
         for item in result:
             res = item[1]
-            group = res['cn'][0].decode("utf-8")
+
+            group = decode_to_utf8(res['cn'][0])
             hostgroup = [ ]
             varlist = [ ]
             children = [ ]
@@ -100,9 +104,9 @@ def getlist():
             #print res
             for key, value in res.items():
                 if key == "member":
-                    for item in value:
-                        host_byte_string=item.decode("utf-8") 
-                        host = re.match('cn=([^,]*)', host_byte_string)
+                    for host_byte_string in value:
+                        host = decode_to_utf8(host_byte_string) 
+                        host = re.match('cn=([^,]*)', host)
                         host = host.group(1)
                         if host in groups:
                             children.append(host)
